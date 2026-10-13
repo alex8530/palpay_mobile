@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/app_theme.dart';
+import 'fx.dart';
+
 /// Renders getPalPayAccounts rows as per-account cards, mirroring the web view.
 class AccountCards extends StatelessWidget {
   const AccountCards({
@@ -45,7 +48,7 @@ class AccountCards extends StatelessWidget {
         Text('$title (${rows.length})',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 8),
-        for (final acc in rows) _card(context, acc),
+        ...staggered([for (final acc in rows) _card(context, acc)], step: 140),
       ],
     );
   }
@@ -62,10 +65,10 @@ class AccountCards extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDefault ? const Color(0xFF0F766E) : const Color(0xFFE2E8F0),
+          color: isDefault ? AppColors.purple : AppColors.border,
           width: isDefault ? 2 : 1,
         ),
       ),
@@ -76,16 +79,16 @@ class AccountCards extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(c[0],
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F766E))),
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.purple)),
               if (isDefault)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDCFCE7),
+                    color: AppColors.greenBg,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: const Text('افتراضي',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF166534))),
+                      style: TextStyle(fontSize: 12, color: AppColors.green)),
                 ),
             ],
           ),
@@ -94,9 +97,16 @@ class AccountCards extends StatelessWidget {
             textDirection: TextDirection.ltr,
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text('${c[1]} ${_money(balance)}',
-                  style: const TextStyle(
-                      fontSize: 26, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+              child: CountUp(
+                value: (balance is num) ? balance : num.tryParse(balance.toString()) ?? 0,
+                format: (v) => '${c[1]} ${_money(v)}',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.text,
+                  shadows: [Shadow(color: AppColors.purple, blurRadius: 18)],
+                ),
+              ),
             ),
           ),
           if (showAvail)
@@ -105,7 +115,7 @@ class AccountCards extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text('المتاح: ${c[1]} ${_money(acc['availableBalance'])}',
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
+                    style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
               ),
             ),
           const SizedBox(height: 8),
@@ -136,13 +146,13 @@ class AccountCards extends StatelessWidget {
       children: [
         const SizedBox(
           width: 110,
-          child: Text('رقم الحساب', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+          child: Text('رقم الحساب', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
         ),
         Expanded(
           child: SelectableText(
             number.isEmpty ? '—' : number,
             textDirection: TextDirection.ltr,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.text),
           ),
         ),
         if (number.isNotEmpty)
@@ -171,13 +181,13 @@ class AccountCards extends StatelessWidget {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
           ),
           Expanded(
             child: Text(
               value,
               textDirection: ltr ? TextDirection.ltr : null,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
+              style: const TextStyle(fontSize: 13, color: AppColors.text),
             ),
           ),
         ],

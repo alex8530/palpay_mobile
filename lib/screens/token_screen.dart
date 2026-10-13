@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/settings_store.dart';
+import '../theme/app_theme.dart';
+import '../widgets/fx.dart';
 import 'settings_screen.dart';
 import 'wallet_home_screen.dart';
 
@@ -56,7 +58,8 @@ class _TokenScreenState extends State<TokenScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.editing ? 'تعديل التوكن' : 'PalPay'),
+        title: FlickerText(widget.editing ? 'تعديل التوكن' : 'PalPay',
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 3)),
         actions: [
           IconButton(
             tooltip: 'الإعدادات',
@@ -69,20 +72,30 @@ class _TokenScreenState extends State<TokenScreen> {
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: [
-          const SizedBox(height: 24),
-          const Icon(Icons.key, size: 56, color: Color(0xFF0F766E)),
-          const SizedBox(height: 16),
-          const Text(
-            'أدخل التوكن',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        children: staggered([
+          const SizedBox(height: 40),
+          const Center(
+            child: GlowPulse(
+              intensity: 1.4,
+              child: CircleAvatar(
+                radius: 46,
+                backgroundColor: AppColors.purpleDeep,
+                child: Icon(Icons.key, size: 46, color: AppColors.purpleGlow),
+              ),
+            ),
+          ),
+          const SizedBox(height: 28),
+          const Center(
+            child: FlickerText(
+              'أدخل التوكن',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+            ),
           ),
           const SizedBox(height: 6),
           const Text(
             'بيتحفظ على الجوال وبيضل موجود لحد ما تعدّله.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF64748B)),
+            style: TextStyle(color: AppColors.textMuted),
           ),
           const SizedBox(height: 24),
           TextField(
@@ -93,14 +106,19 @@ class _TokenScreenState extends State<TokenScreen> {
             decoration: const InputDecoration(labelText: 'التوكن (ACCESS_TOKEN)'),
           ),
           const SizedBox(height: 16),
-          FilledButton(
-            onPressed: _save,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('حفظ ومتابعة'),
+          PressScale(
+            child: GlowPulse(
+              radius: 14,
+              child: FilledButton(
+                onPressed: _save,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  child: Text('حفظ ومتابعة'),
+                ),
+              ),
             ),
           ),
-        ],
+        ]),
       ),
     );
   }

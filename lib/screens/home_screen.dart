@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/palpay_requests.dart';
 import '../core/settings_store.dart';
 import '../models/request_def.dart';
+import '../theme/app_theme.dart';
 import 'request_screen.dart';
 import 'settings_screen.dart';
 
@@ -58,9 +59,9 @@ class HomeScreen extends StatelessWidget {
                           return Chip(
                             label: Text('${e.value}: ${on ? '✓' : '—'}'),
                             backgroundColor:
-                                on ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
+                                on ? AppColors.greenBg : AppColors.surface2,
                             labelStyle: TextStyle(
-                              color: on ? const Color(0xFF166534) : const Color(0xFF64748B),
+                              color: on ? AppColors.green : AppColors.textMuted,
                               fontSize: 12,
                             ),
                             side: BorderSide.none,
@@ -99,7 +100,7 @@ class HomeScreen extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      border: Border.all(color: AppColors.border),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Column(
@@ -107,7 +108,7 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         Text(def.method,
                             style: const TextStyle(
-                                fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFB45309))),
+                                fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.amber)),
                         const SizedBox(height: 2),
                         Text(def.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                         if (settings.devMode) ...[
@@ -116,7 +117,7 @@ class HomeScreen extends StatelessWidget {
                             textDirection: TextDirection.ltr,
                             child: Text(def.path,
                                 style: const TextStyle(
-                                    fontSize: 12, color: Color(0xFF64748B), fontFamily: 'monospace')),
+                                    fontSize: 12, color: AppColors.textMuted, fontFamily: 'monospace')),
                           ),
                         ],
                       ],

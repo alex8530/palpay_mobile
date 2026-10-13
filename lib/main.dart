@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/settings_store.dart';
 import 'screens/token_screen.dart';
 import 'screens/wallet_home_screen.dart';
+import 'theme/app_theme.dart';
+import 'widgets/fx.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarColor: AppColors.bg,
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
   await SettingsStore.instance.load();
   runApp(const PalpayApp());
 }
-
-const seed = Color(0xFF0F766E);
 
 class PalpayApp extends StatelessWidget {
   const PalpayApp({super.key});
@@ -28,20 +35,9 @@ class PalpayApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: seed),
-        scaffoldBackgroundColor: const Color(0xFFF1F5F9),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: seed,
-          foregroundColor: Colors.white,
-        ),
-        inputDecorationTheme: const InputDecorationTheme(
-          filled: true,
-          fillColor: Color(0xFFF8FAFC),
-          border: OutlineInputBorder(),
-        ),
-      ),
+      theme: buildAppTheme(),
+      // One animated background behind every route.
+      builder: (context, child) => HauntedBackground(child: child ?? const SizedBox.shrink()),
       // The token is entered once and kept; skip straight home when present.
       home: SettingsStore.instance.get('ACCESS_TOKEN').isEmpty
           ? const TokenScreen()

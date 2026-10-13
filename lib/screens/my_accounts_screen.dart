@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../core/accounts.dart';
+import '../theme/app_theme.dart';
 import '../widgets/account_cards.dart';
+import '../widgets/fx.dart';
 
 /// "حساباتي": calls getPalPayAccounts and shows every account, with a
 /// copyable account number.
@@ -13,7 +15,7 @@ class MyAccountsScreen extends StatefulWidget {
 }
 
 class _MyAccountsScreenState extends State<MyAccountsScreen> {
-  AccountsResult? _accounts;
+  RowsResult? _accounts;
 
   @override
   void initState() {
@@ -32,9 +34,11 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
   Widget build(BuildContext context) {
     final accounts = _accounts;
     return Scaffold(
-      appBar: AppBar(title: const Text('حساباتي')),
+      appBar: AppBar(
+        title: const FlickerText('حساباتي', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+      ),
       body: accounts == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const LoaderBox()
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
@@ -44,7 +48,7 @@ class _MyAccountsScreenState extends State<MyAccountsScreen> {
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Text(accounts.error!, style: const TextStyle(color: Color(0xFFB91C1C))),
+                        child: Text(accounts.error!, style: const TextStyle(color: AppColors.blood)),
                       ),
                     )
                   else if (accounts.rows.isEmpty)

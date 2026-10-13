@@ -7,6 +7,7 @@ import '../core/palpay_requests.dart';
 import '../core/result_utils.dart';
 import '../core/settings_store.dart';
 import '../models/request_def.dart';
+import '../theme/app_theme.dart';
 import '../widgets/account_cards.dart';
 import '../widgets/transactions_table.dart';
 
@@ -80,23 +81,23 @@ class _RequestScreenState extends State<RequestScreen> {
                     Directionality(
                       textDirection: TextDirection.ltr,
                       child: Text('${_def.method} ${_def.path}',
-                          style: const TextStyle(fontFamily: 'monospace', color: Color(0xFF334155))),
+                          style: const TextStyle(fontFamily: 'monospace', color: AppColors.textMuted)),
                     ),
                   if (dev && _def.note != null) ...[
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
+                        color: AppColors.surface2,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(_def.note!, style: const TextStyle(color: Color(0xFF334155))),
+                      child: Text(_def.note!, style: const TextStyle(color: AppColors.textMuted)),
                     ),
                   ],
                   const SizedBox(height: 8),
                   if (_def.fields.isEmpty)
                     const Text('هذا الركوست بدون باراميترات (Body = {}).',
-                        style: TextStyle(color: Color(0xFF64748B)))
+                        style: TextStyle(color: AppColors.textMuted))
                   else
                     for (final f in _def.fields) _field(f),
                   const SizedBox(height: 12),
@@ -224,12 +225,12 @@ class _RequestScreenState extends State<RequestScreen> {
             ),
             const SizedBox(height: 10),
             if (r.error != null)
-              _alert(r.error!, const Color(0xFFFEE2E2), const Color(0xFF991B1B), ltr: true),
+              _alert(r.error!, AppColors.bloodBg, AppColors.blood, ltr: true),
             if (r.saved.isNotEmpty)
               _alert(
                 'تم حفظ تلقائي: ${r.saved.entries.map((e) => '${e.key}=${_short(e.value)}').join(' · ')}',
-                const Color(0xFFDCFCE7),
-                const Color(0xFF166534),
+                AppColors.greenBg,
+                AppColors.green,
               ),
             const SizedBox(height: 8),
             if (rows != null && _def.key == 'getPalPayAccounts')
@@ -253,7 +254,7 @@ class _RequestScreenState extends State<RequestScreen> {
               _rawJson(r)
             else if (r.saved.isEmpty && r.error == null)
               const Text('تم استلام الرد. فعّل «وضع المطور» من الإعدادات لعرض التفاصيل الخام.',
-                  style: TextStyle(color: Color(0xFF64748B))),
+                  style: TextStyle(color: AppColors.textMuted)),
             if (dev) ...[
               const SizedBox(height: 12),
               if (rows != null) _rawJson(r),
@@ -275,12 +276,12 @@ class _RequestScreenState extends State<RequestScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       decoration: BoxDecoration(
-        color: ok ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+        color: ok ? AppColors.greenBg : AppColors.bloodBg,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(text,
           style: TextStyle(
-              fontSize: 13, color: ok ? const Color(0xFF166534) : const Color(0xFF991B1B))),
+              fontSize: 13, color: ok ? AppColors.green : AppColors.blood)),
     );
   }
 
@@ -313,7 +314,7 @@ class _RequestScreenState extends State<RequestScreen> {
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFF0D1117),
+            color: AppColors.code,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Directionality(
@@ -321,7 +322,7 @@ class _RequestScreenState extends State<RequestScreen> {
             child: SelectableText(
               content,
               style: const TextStyle(
-                  color: Color(0xFFE6EDF3), fontSize: 12, fontFamily: 'monospace'),
+                  color: AppColors.codeText, fontSize: 12, fontFamily: 'monospace'),
             ),
           ),
         ),

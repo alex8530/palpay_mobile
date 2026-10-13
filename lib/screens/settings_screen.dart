@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/settings_store.dart';
+import '../widgets/fx.dart';
 import 'home_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -80,10 +81,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('الإعدادات والهيدرز')),
+      appBar: AppBar(
+        title: const FlickerText('الإعدادات', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(12),
-        children: [
+        children: staggered([
           Card(
             child: SwitchListTile(
               value: _devMode,
@@ -96,9 +99,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           for (final group in _groups.entries) _groupCard(group.key, group.value),
           const SizedBox(height: 8),
-          FilledButton(
-            onPressed: _save,
-            child: const Text('حفظ الإعدادات'),
+          PressScale(
+            child: GlowPulse(
+              radius: 14,
+              child: FilledButton(
+                onPressed: _save,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Text('حفظ الإعدادات'),
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
@@ -109,7 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 24),
-        ],
+        ]),
       ),
     );
   }
