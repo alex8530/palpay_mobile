@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/settings_store.dart';
-import 'screens/home_screen.dart';
+import 'screens/token_screen.dart';
+import 'screens/wallet_home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +19,7 @@ class PalpayApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PalPay Console',
+      title: 'PalPay',
       debugShowCheckedModeBanner: false,
       locale: const Locale('ar'),
       supportedLocales: const [Locale('ar'), Locale('en')],
@@ -41,7 +42,10 @@ class PalpayApp extends StatelessWidget {
           border: OutlineInputBorder(),
         ),
       ),
-      home: const HomeScreen(),
+      // The token is entered once and kept; skip straight home when present.
+      home: SettingsStore.instance.get('ACCESS_TOKEN').isEmpty
+          ? const TokenScreen()
+          : const WalletHomeScreen(),
     );
   }
 }

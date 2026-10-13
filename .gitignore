@@ -7,7 +7,7 @@ build/
 pubspec.lock
 
 # Generated platform folders (recreate with `flutter create .`)
-/android/
+# android/ is committed: it carries the INTERNET permission and build tweaks.
 /ios/
 /linux/
 /macos/

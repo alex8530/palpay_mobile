@@ -32,9 +32,9 @@ class _RequestScreenState extends State<RequestScreen> {
   void initState() {
     super.initState();
     _def = PalpayRequests.find(widget.requestKey)!;
+    final client = PalpayClient(_settings);
     for (final f in _def.fields) {
-      final fromSetting = f.from != null ? _settings.get(f.from!) : '';
-      final initial = fromSetting.isNotEmpty ? fromSetting : (f.defaultValue ?? '');
+      final initial = client.initialValue(f);
       _values[f.name] = initial;
       if (f.type == 'text' || f.type == 'textarea' || f.type == 'number' || f.type == 'date') {
         _controllers[f.name] = TextEditingController(text: initial);

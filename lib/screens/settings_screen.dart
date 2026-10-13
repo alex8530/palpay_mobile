@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/settings_store.dart';
+import 'home_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -20,6 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'ACCESS_TOKEN': 'التوكن / كود التفعيل',
       'ANDROID_ID': 'ANDROID_ID',
       'COUNTER': 'COUNTER',
+      'PAY_PIN': 'PIN التحويل (اختياري)',
     },
     'الهيدرز الثابتة': {
       'H_CONTENT_TYPE': 'Content-Type',
@@ -78,7 +80,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('الإعدادات والهيدرز المشتركة')),
+      appBar: AppBar(title: const Text('الإعدادات والهيدرز')),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -97,6 +99,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           FilledButton(
             onPressed: _save,
             child: const Text('حفظ الإعدادات'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.terminal),
+            label: const Text('الكونسول (كل الركوستات)'),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            ),
           ),
           const SizedBox(height: 24),
         ],
@@ -119,7 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: TextField(
                   controller: _controllers[entry.key],
                   textDirection: TextDirection.ltr,
-                  obscureText: entry.key == 'PASSWORD' || entry.key == 'NEW_PASSWORD',
+                  obscureText: const {'PASSWORD', 'NEW_PASSWORD', 'PAY_PIN'}.contains(entry.key),
                   decoration: InputDecoration(
                     labelText: '${entry.value}  (${entry.key})',
                     isDense: true,

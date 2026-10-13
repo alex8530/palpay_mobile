@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/request_def.dart';
+import 'palpay_requests.dart';
 import 'palpay_signer.dart';
 import 'settings_store.dart';
 
@@ -73,6 +74,23 @@ class PalpayClient {
     }
 
     return (data, input);
+  }
+
+  /// Initial form value for a field: its source setting if set, else its default.
+  String initialValue(FieldDef field) {
+    final fromSetting = field.from != null ? settings.get(field.from!) : '';
+    return fromSetting.isNotEmpty ? fromSetting : (field.defaultValue ?? '');
+  }
+
+  /// Send a registry request by key, filling fields with their initial values
+  /// and applying [overrides] on top.
+  Future<PalpayResult> sendKey(String key, [Map<String, String> overrides = const {}]) {
+    final def = PalpayRequests.find(key)!;
+    final values = <String, String>{
+      for (final f in def.fields) f.name: initialValue(f),
+      ...overrides,
+    };
+    return send(def, values);
   }
 
   Map<String, String> buildHeaders(String body, String authorization) {

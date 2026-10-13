@@ -21,13 +21,16 @@ class SettingsStore extends ChangeNotifier {
   static const Map<String, String> defaults = {
     'BASE_URL': 'https://mahfazatim2.palpay.ps',
     // identity / signing
-    'USERNAME': '',
-    'PASSWORD': '',
-    'SALT': '',
-    'ACCESS_TOKEN': '',
+    'USERNAME': 'alex8530',
+    'PASSWORD': 'Aa10203040##',
+    'SALT': r']7X3F!Clm&AFWb(,].<E',
+    'ACCESS_TOKEN':
+        'SN8nfVhpTJYAAFA03nEgUvBFBRF6Gco0r0/2vY6i1IdOpqJsXzDjsf2J4FoSUkAhO3BoUjbJt1D/Aw7qk3IOKQ==',
     'NEW_PASSWORD': '',
     'ANDROID_ID': 'a1b2c3d4e5f60718',
     'COUNTER': '0',
+    // optional PIN sent with confirmPayToFriendTransfer (empty = send "")
+    'PAY_PIN': '',
     // UI
     'DEV_MODE': '0',
     // static headers
@@ -37,7 +40,7 @@ class SettingsStore extends ChangeNotifier {
     'H_ACCEPT_LANGUAGE': 'en,ar;q=0.8',
     'H_CONTENT_TYPE': 'application/json; charset=utf-8',
     // chained values (filled automatically from responses)
-    'ACCOUNT': '',
+    'ACCOUNT': '090000353286',
     'REFNUM': '',
     'FROM_ACCOUNT': '',
     'TO_NAME': '',
@@ -60,6 +63,9 @@ class SettingsStore extends ChangeNotifier {
         final stored = (jsonDecode(raw) as Map).map(
           (k, v) => MapEntry(k.toString(), v?.toString() ?? ''),
         );
+        // Empty stored values fall back to the defaults, so a blank saved
+        // before a default existed doesn't hide it.
+        stored.removeWhere((k, v) => v.isEmpty && (defaults[k] ?? '').isNotEmpty);
         _values = {...defaults, ...stored};
       }
     } catch (_) {

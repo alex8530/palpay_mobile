@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Renders getPalPayAccounts rows as per-account cards, mirroring the web view.
 class AccountCards extends StatelessWidget {
   const AccountCards({
     super.key,
     required this.rows,
-    required this.onUseAsFromAccount,
+    this.onUseAsFromAccount,
+    this.title = 'الحسابات',
   });
 
   final List<Map<String, dynamic>> rows;
-  final void Function(String accountNumber) onUseAsFromAccount;
+  /// When null, the "use as FROM_ACCOUNT" button is hidden.
+  final void Function(String accountNumber)? onUseAsFromAccount;
+  final String title;
 
   static const _currencies = {
     '376': ['شيكل', '₪'],
@@ -38,7 +42,7 @@ class AccountCards extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('الحسابات (${rows.length})',
+        Text('$title (${rows.length})',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 8),
         for (final acc in rows) _card(context, acc),
@@ -105,22 +109,57 @@ class AccountCards extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 8),
-          _meta('رقم الحساب', acc['accountNumber']?.toString() ?? '—', ltr: true),
+          _accountNumber(context, acc['accountNumber']?.toString() ?? ''),
           if ((acc['accountName'] ?? '').toString().isNotEmpty) _meta('الاسم', acc['accountName'].toString()),
           if ((acc['holderName'] ?? '').toString().isNotEmpty) _meta('صاحب الحساب', acc['holderName'].toString()),
           if ((acc['nickName'] ?? '').toString().isNotEmpty) _meta('اللقب', acc['nickName'].toString()),
           if ((acc['iban'] ?? '').toString().isNotEmpty) _meta('IBAN', acc['iban'].toString(), ltr: true),
           if (acc['availablePoints'] != null) _meta('النقاط', acc['availablePoints'].toString(), ltr: true),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => onUseAsFromAccount(acc['accountNumber']?.toString() ?? ''),
-              child: const Text('اعتماد كـ FROM_ACCOUNT'),
+          if (onUseAsFromAccount != null) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => onUseAsFromAccount!(acc['accountNumber']?.toString() ?? ''),
+                child: const Text('اعتماد كـ FROM_ACCOUNT'),
+              ),
             ),
-          ),
+          ],
         ],
       ),
+    );
+  }
+
+  /// Account number row: selectable, with a copy-to-clipboard button.
+  Widget _accountNumber(BuildContext context, String number) {
+    return Row(
+      children: [
+        const SizedBox(
+          width: 110,
+          child: Text('رقم الحساب', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+        ),
+        Expanded(
+          child: SelectableText(
+            number.isEmpty ? '—' : number,
+            textDirection: TextDirection.ltr,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+          ),
+        ),
+        if (number.isNotEmpty)
+          IconButton(
+            tooltip: 'نسخ',
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.copy, size: 18),
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: number));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('تم نسخ رقم الحساب.')),
+                );
+              }
+            },
+          ),
+      ],
     );
   }
 

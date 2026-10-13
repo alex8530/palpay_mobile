@@ -1,3 +1,5 @@
+import 'palpay_client.dart';
+
 /// Find the first list-of-objects in a response: the transactions/accounts
 /// array, whether the response is that list itself or wraps it under some key.
 /// Mirrors PalpayController::extractRows().
@@ -26,4 +28,25 @@ List<String> columnsFor(List<Map<String, dynamic>>? rows) {
     }
   }
   return columns;
+}
+
+/// A short human-readable reason for a failed PalPay call.
+String errorMessage(PalpayResult r) {
+  if (r.error != null) {
+    return 'تعذّر الاتصال بالخادم: ${r.error}';
+  }
+  final json = r.json;
+  if (json is Map) {
+    for (final key in const ['message', 'errorMessage', 'msg', 'description', 'error', 'errorDesc']) {
+      final v = json[key];
+      if (v != null && v.toString().isNotEmpty) {
+        return '${v.toString()} (HTTP ${r.status})';
+      }
+    }
+  }
+  if (r.status == 401 || r.status == 403) {
+    return 'الخادم رفض الطلب (HTTP ${r.status}). غالباً التوكن منتهي أو بيانات التوقيع غلط.';
+  }
+  final body = r.body.length > 300 ? '${r.body.substring(0, 300)}…' : r.body;
+  return 'فشل الطلب (HTTP ${r.status})${body.isEmpty ? '' : ': $body'}';
 }
