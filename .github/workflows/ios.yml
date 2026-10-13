@@ -2,11 +2,10 @@
 # Windows with Sideloadly (free Apple ID: the app runs for 7 days).
 name: iOS IPA
 
+# Manual only: Actions is blocked on this account by billing, so building on
+# every push would just fail. Codemagic (codemagic.yaml) is the main route.
 on:
   workflow_dispatch:
-  push:
-    branches: [master]
-    paths-ignore: ['**.md']
 
 jobs:
   build:
