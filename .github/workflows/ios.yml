@@ -1,0 +1,41 @@
+# Builds an unsigned iOS .ipa on a macOS runner. Sign + install it from
+# Windows with Sideloadly (free Apple ID: the app runs for 7 days).
+name: iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths-ignore: ['**.md']
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.7
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - run: flutter test
+
+      - name: Build (no code signing)
+        run: flutter build ios --release --no-codesign
+
+      - name: Package .ipa
+        run: |
+          mkdir -p Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -qr PalPay-${{ github.run_number }}.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PalPay-ios-${{ github.run_number }}
+          path: PalPay-${{ github.run_number }}.ipa
+          retention-days: 14
