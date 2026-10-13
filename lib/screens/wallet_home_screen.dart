@@ -9,6 +9,7 @@ import '../widgets/fx.dart';
 import '../widgets/transaction_card.dart';
 import 'my_accounts_screen.dart';
 import 'pay_friend_screen.dart';
+import 'registration_screen.dart';
 import 'settings_screen.dart';
 import 'token_screen.dart';
 import 'transactions_screen.dart';
@@ -130,6 +131,12 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
               icon: Icons.account_balance_wallet,
               label: 'حساباتي',
               onTap: () => _push(const MyAccountsScreen()),
+            ),
+            const SizedBox(height: 8),
+            _actionButton(
+              icon: Icons.person_add,
+              label: 'التسجيل',
+              onTap: () => _push(const RegistrationScreen()),
             ),
             if (accounts?.error == null && accounts != null) ...[
               const SizedBox(height: 8),

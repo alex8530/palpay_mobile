@@ -16,6 +16,8 @@ dependencies:
   flutter_secure_storage: 9.2.2
   share_plus: 10.0.2
   path_provider: 2.1.4
+  image_picker: 1.1.2
+  image: 4.2.0
 
 dev_dependencies:
   flutter_test:

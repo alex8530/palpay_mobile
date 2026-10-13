@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/settings_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/fx.dart';
+import 'registration_screen.dart';
 import 'settings_screen.dart';
 import 'wallet_home_screen.dart';
 
@@ -115,6 +116,16 @@ class _TokenScreenState extends State<TokenScreen> {
                   padding: EdgeInsets.symmetric(vertical: 14),
                   child: Text('حفظ ومتابعة'),
                 ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: TextButton.icon(
+              icon: const Icon(Icons.person_add),
+              label: const Text('تسجيل مستخدم جديد'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const RegistrationScreen()),
               ),
             ),
           ),
