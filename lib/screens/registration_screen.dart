@@ -451,7 +451,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       return _field(label, const Text('اختر القائمة السابقة أولاً', style: TextStyle(color: AppColors.textFaint)));
     }
     return FutureBuilder<List<LookupOption>>(
-      key: ValueKey('$type:${parent ?? ''}'),
+      // The label keeps the key unique when one list backs several fields
+      // (issuance country / nationality / country); the parent resets it.
+      key: ValueKey('$label|$type:${parent ?? ''}'),
       future: _future(type, parent),
       builder: (context, snap) {
         if (snap.connectionState != ConnectionState.done) {

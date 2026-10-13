@@ -8,7 +8,12 @@ import 'enroll_config.dart';
 /// Shrinks a photo (resize + JPEG re-encode) like App\Services\ImageCompressor,
 /// then Base64-encodes it for PreEnroll.
 String compressToBase64(Uint8List input) {
-  final decoded = img.decodeImage(input);
+  img.Image? decoded;
+  try {
+    decoded = img.decodeImage(input);
+  } catch (_) {
+    decoded = null; // corrupt data can make the decoder throw instead of returning null
+  }
   if (decoded == null) {
     throw Exception('Unreadable image.');
   }
