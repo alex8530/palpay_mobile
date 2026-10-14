@@ -25,7 +25,7 @@ class SettingsStore extends ChangeNotifier {
     'PASSWORD': 'Aa10203040##',
     'SALT': r']7X3F!Clm&AFWb(,].<E',
     'ACCESS_TOKEN':
-        'SN8nfVhpTJYAAFA03nEgUvBFBRF6Gco0r0/2vY6i1IdOpqJsXzDjsf2J4FoSUkAhO3BoUjbJt1D/Aw7qk3IOKQ==',
+        'SN8pxToczxoAAFA0hflj6S+0R76DLTsXRa+iP1s16xm6D9mIFPFCtgoWtpakcY+5DW1HJZL1LKw7C31ZkQnggg==',
     'NEW_PASSWORD': '',
     'ANDROID_ID': 'a1b2c3d4e5f60718',
     'COUNTER': '0',
@@ -89,7 +89,13 @@ class SettingsStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Stores only values that differ from [defaults], so a default changed in
+  /// code (e.g. a new token) takes effect instead of an old saved copy.
   Future<void> _persist() async {
-    await _storage.write(key: _storageKey, value: jsonEncode(_values));
+    final overrides = {
+      for (final e in _values.entries)
+        if (defaults[e.key] != e.value) e.key: e.value,
+    };
+    await _storage.write(key: _storageKey, value: jsonEncode(overrides));
   }
 }
