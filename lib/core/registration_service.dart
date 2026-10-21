@@ -91,11 +91,20 @@ class RegistrationStep {
 }
 
 class RegistrationResult {
-  RegistrationResult({required this.ok, required this.message, required this.log});
+  RegistrationResult({
+    required this.ok,
+    required this.message,
+    required this.log,
+    this.idImageBase64,
+    this.personalImageBase64,
+  });
 
   final bool ok;
   final String message;
   final List<RegistrationStep> log;
+
+  /// The compressed JPEGs actually sent to PreEnroll (kept for the archive).
+  final String? idImageBase64, personalImageBase64;
 }
 
 /// Runs the registration flow against the upstream API — a Dart port of
@@ -118,10 +127,12 @@ class RegistrationService {
     final log = <RegistrationStep>[];
 
     // 1) PreEnroll
+    final idBase64 = compressToBase64(idImage);
+    final personalBase64 = compressToBase64(personalImage);
     final preEnrollPayload = {
       'nationalId': data.idNumber,
-      'idImage': compressToBase64(idImage),
-      'personalImage': compressToBase64(personalImage),
+      'idImage': idBase64,
+      'personalImage': personalBase64,
     };
     var result = await _client.post('pre_enroll', preEnrollPayload);
     var desc = EnrollClient.find(result.json, 'desc');
@@ -148,7 +159,13 @@ class RegistrationService {
       return _fail('لم تتم عملية التسجيل (resendActivationInfo): ${_reason(result, message)}', log);
     }
 
-    return RegistrationResult(ok: true, message: 'تمت عملية التسجيل بنجاح', log: log);
+    return RegistrationResult(
+      ok: true,
+      message: 'تمت عملية التسجيل بنجاح',
+      log: log,
+      idImageBase64: idBase64,
+      personalImageBase64: personalBase64,
+    );
   }
 
   RegistrationResult _fail(String message, List<RegistrationStep> log) =>

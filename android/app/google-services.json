@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "607019675125",
+    "project_id": "palpay-mobile",
+    "storage_bucket": "palpay-mobile.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:607019675125:android:e7b5424d153583e5da04bc",
+        "android_client_info": {
+          "package_name": "com.alex.palpay_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSg-gTi09r0IUbT2EacIDSPleggmOZqQU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

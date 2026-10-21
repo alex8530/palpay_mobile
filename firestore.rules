@@ -1,0 +1,66 @@
+rules_version = '2';
+
+// Deploy with: firebase deploy --only firestore:rules
+//
+// Who is who: every app account is a Firebase Auth login
+// `{phone}@palpay-mobile.app` plus a profile at `users/{phone}` holding its
+// role, active flag and the login's `uid`. A request only counts as a user
+// when its login uid matches that profile, so the public API key alone (or a
+// self-made Firebase account) reads and writes nothing.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function myPhone() {
+      return request.auth.token.email.split('@')[0];
+    }
+
+    function myProfilePath() {
+      return /databases/$(database)/documents/users/$(myPhone());
+    }
+
+    // Signed in with an app login that has a matching, active profile.
+    function isUser() {
+      return request.auth != null
+        && request.auth.token.email is string
+        && request.auth.token.email.matches('^[0-9]+@palpay-mobile[.]app$')
+        && exists(myProfilePath())
+        && get(myProfilePath()).data.uid == request.auth.uid
+        && get(myProfilePath()).data.active != false;
+    }
+
+    function isAdmin() {
+      return isUser() && get(myProfilePath()).data.role == 'admin';
+    }
+
+    // Profiles hold passwords: only the admin sees them all; a user sees only
+    // their own. Only the admin creates, edits or deletes them.
+    match /users/{phone} {
+      allow read: if isAdmin() || (isUser() && phone == myPhone());
+      allow write: if isAdmin();
+    }
+
+    // The on/off switch and the message: everyone reads (the lock screen and
+    // the dialog also show before login), only the admin changes them.
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Registrations: a user adds and reads only their own, the admin reads
+    // all. Nobody edits or deletes them from the app.
+    match /registrations/{id} {
+      allow read: if isAdmin() || (isUser() && resource.data.byPhone == myPhone());
+      allow create: if isUser() && request.resource.data.byPhone == myPhone();
+      allow update, delete: if false;
+
+      match /images/{image} {
+        allow read: if isAdmin()
+          || (isUser() && get(/databases/$(database)/documents/registrations/$(id)).data.byPhone == myPhone());
+        // Written in the same batch as the registration, hence getAfter.
+        allow create: if isUser()
+          && getAfter(/databases/$(database)/documents/registrations/$(id)).data.byPhone == myPhone();
+        allow update, delete: if false;
+      }
+    }
+  }
+}

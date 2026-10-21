@@ -17,3 +17,6 @@ pubspec.lock
 .idea/
 .vscode/
 *.iml
+
+# Kotlin compiler caches
+android/.kotlin/

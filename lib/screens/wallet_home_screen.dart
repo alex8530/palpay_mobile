@@ -7,12 +7,17 @@ import '../core/settings_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/fx.dart';
 import '../widgets/transaction_card.dart';
+import 'app_control_screen.dart';
 import 'my_accounts_screen.dart';
 import 'pay_friend_screen.dart';
+import 'pending_screen.dart';
 import 'registration_screen.dart';
+import 'requests_screen.dart';
+import 'root_screen.dart';
 import 'settings_screen.dart';
 import 'token_screen.dart';
 import 'transactions_screen.dart';
+import 'users_screen.dart';
 
 /// Main screen: holder info, balances, this month's totals and the latest
 /// transactions, plus the two actions.
@@ -105,6 +110,11 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
             icon: const Icon(Icons.settings),
             onPressed: () => _push(const SettingsScreen(), reload: true),
           ),
+          IconButton(
+            tooltip: 'تسجيل الخروج',
+            icon: const Icon(Icons.logout),
+            onPressed: () => logoutToRoot(context),
+          ),
         ],
       ),
       body: RefreshIndicator(
@@ -137,6 +147,30 @@ class _WalletHomeScreenState extends State<WalletHomeScreen> {
               icon: Icons.person_add,
               label: 'التسجيل',
               onTap: () => _push(const RegistrationScreen()),
+            ),
+            const SizedBox(height: 8),
+            _actionButton(
+              icon: Icons.assignment,
+              label: 'طلبات التسجيل',
+              onTap: () => _push(const RequestsScreen()),
+            ),
+            const SizedBox(height: 8),
+            _actionButton(
+              icon: Icons.pending_actions,
+              label: 'الطلبات العالقة',
+              onTap: () => _push(const PendingScreen()),
+            ),
+            const SizedBox(height: 8),
+            _actionButton(
+              icon: Icons.group,
+              label: 'المستخدمين',
+              onTap: () => _push(const UsersScreen()),
+            ),
+            const SizedBox(height: 8),
+            _actionButton(
+              icon: Icons.tune,
+              label: 'إعدادات التطبيق',
+              onTap: () => _push(const AppControlScreen()),
             ),
             if (accounts?.error == null && accounts != null) ...[
               const SizedBox(height: 8),

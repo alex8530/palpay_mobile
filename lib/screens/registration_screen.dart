@@ -1,11 +1,16 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../core/auth_service.dart';
 import '../core/enroll_config.dart';
 import '../core/lookups.dart';
+import '../core/pending_store.dart';
 import '../core/registration_service.dart';
+import '../core/registrations_repo.dart';
 import '../theme/app_theme.dart';
 import '../widgets/fx.dart';
 
@@ -13,13 +18,16 @@ import '../widgets/fx.dart';
 /// (no admin approval) by running PreEnroll → EnrollInMobileBanking →
 /// resendActivationInfo — the exact same flow as the web project.
 class RegistrationScreen extends StatefulWidget {
-  const RegistrationScreen({super.key});
+  const RegistrationScreen({super.key, this.pendingId});
+
+  /// Opens a saved pending request to finish, edit and send again.
+  final String? pendingId;
 
   @override
   State<RegistrationScreen> createState() => _RegistrationScreenState();
 }
 
-class _RegistrationScreenState extends State<RegistrationScreen> {
+class _RegistrationScreenState extends State<RegistrationScreen> with WidgetsBindingObserver {
   final _form = GlobalKey<FormState>();
 
   final _idNumber = TextEditingController();
@@ -53,8 +61,28 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _futures = <String, Future<List<LookupOption>>>{};
   bool _submitting = false;
   RegistrationResult? _result;
+  String? _archiveStatus;
   String? _formError;
   bool _emailEdited = false;
+
+  /// The pending request this form is saved as (set once saved or opened).
+  String? _pendingId;
+
+  /// Form state when last saved/opened, to tell if there are unsaved changes.
+  String _savedSnapshot = '';
+
+  /// Form state of a fresh, untouched form (nothing worth keeping).
+  String _emptySnapshot = '';
+  bool _sent = false;
+
+  /// Photos as last written to the pending store, to skip rewriting them.
+  Uint8List? _savedIdBytes, _savedPersonalBytes;
+
+  /// Why the last send failed, kept on the pending request across autosaves.
+  String? _lastError;
+
+  Timer? _autosaveTimer;
+  bool _saving = false;
 
   static const _months = [
     'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
@@ -68,6 +96,171 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     _email.addListener(() {
       if (_email.text.isNotEmpty && _email.text != _suggestedEmail) _emailEdited = true;
     });
+    _savedSnapshot = _emptySnapshot = _snapshot();
+    if (widget.pendingId != null) {
+      _openPending(widget.pendingId!);
+    }
+    // Keep the form in "الطلبات العالقة" while it is being filled, so closing
+    // or killing the app never loses it.
+    WidgetsBinding.instance.addObserver(this);
+    _autosaveTimer = Timer.periodic(const Duration(seconds: 3), (_) => _autosave());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Going to the background always comes before the app is closed or killed.
+    if (state != AppLifecycleState.resumed) {
+      _autosave();
+    }
+  }
+
+  void _autosave() {
+    if (_hasContent && _dirty && !_submitting) {
+      _saveAsPending(error: _lastError, silent: true);
+    }
+  }
+
+  // -------------------------------------------------------------- pending
+
+  Map<String, dynamic> _formState() => {
+        'idNumber': _idNumber.text,
+        'fullname': _fullname.text,
+        'arabicfullname': _arabicfullname.text,
+        'password': _password.text,
+        'mobile': _mobile.text,
+        'email': _email.text,
+        'emailEdited': _emailEdited,
+        'address': _address.text,
+        'incomeRate': _incomeRate.text,
+        'gender': _gender,
+        'dobDay': _dobDay,
+        'dobMonth': _dobMonth,
+        'dobYear': _dobYear,
+        'issuanceCountry': _issuanceCountry,
+        'nationality': _nationality,
+        'country': _country,
+        'region': _region,
+        'governorate': _governorate,
+        'city': _city,
+        'jobTitle': _jobTitle,
+        'jobPosition': _jobPosition,
+        'noOtherWallet': _noOtherWallet,
+        'hasBankAccount': _hasBankAccount,
+        'termAccepted': _termAccepted,
+      };
+
+  String _snapshot() =>
+      '${jsonEncode(_formState())}|${_idBytes?.length}|${_personalBytes?.length}';
+
+  bool get _dirty => !_sent && _snapshot() != _savedSnapshot;
+
+  /// Anything typed or picked yet (a pending request is never empty).
+  bool get _hasContent => !_sent && (_pendingId != null || _snapshot() != _emptySnapshot);
+
+  Future<void> _openPending(String id) async {
+    final r = await PendingStore.instance.get(id);
+    if (r == null || !mounted) return;
+    final (idImage, personalImage) = await PendingStore.instance.images(id);
+    if (!mounted) return;
+    final f = r.form;
+    String str(String k) => (f[k] ?? '').toString();
+    String? opt(String k) => f[k]?.toString();
+    setState(() {
+      _pendingId = id;
+      _idNumber.text = str('idNumber'); // also fills username and the suggested email
+      _emailEdited = f['emailEdited'] == true;
+      _email.text = str('email');
+      _fullname.text = str('fullname');
+      _arabicfullname.text = str('arabicfullname');
+      _password.text = str('password');
+      _mobile.text = str('mobile');
+      _address.text = str('address');
+      _incomeRate.text = str('incomeRate');
+      _gender = opt('gender') ?? '1';
+      _dobDay = f['dobDay'] as int?;
+      _dobMonth = f['dobMonth'] as int?;
+      _dobYear = f['dobYear'] as int?;
+      _issuanceCountry = opt('issuanceCountry');
+      _nationality = opt('nationality');
+      _country = opt('country');
+      _region = opt('region');
+      _governorate = opt('governorate');
+      _city = opt('city');
+      _jobTitle = opt('jobTitle');
+      _jobPosition = opt('jobPosition');
+      _noOtherWallet = f['noOtherWallet'] != false;
+      _hasBankAccount = f['hasBankAccount'] == true;
+      _termAccepted = f['termAccepted'] == true;
+      _idBytes = _savedIdBytes = idImage;
+      _personalBytes = _savedPersonalBytes = personalImage;
+      _lastError = r.error;
+      if (r.error != null) _formError = 'آخر محاولة فشلت: ${r.error}';
+    });
+    _savedSnapshot = _snapshot();
+  }
+
+  /// Saves the form to "الطلبات العالقة". Returns false if it couldn't.
+  /// [silent] is for autosaves: no message unless something goes wrong.
+  Future<bool> _saveAsPending({String? error, bool silent = false}) async {
+    final owner = AuthService.instance.user?.phone;
+    if (owner == null || _saving) return false;
+    _saving = true;
+    _pendingId ??= PendingStore.newId();
+    final snapshot = _snapshot();
+    final idBytes = _idBytes, personalBytes = _personalBytes;
+    final imagesChanged = !identical(idBytes, _savedIdBytes) || !identical(personalBytes, _savedPersonalBytes);
+    try {
+      await PendingStore.instance.save(
+        PendingRequest(id: _pendingId!, owner: owner, form: _formState(), updatedAt: DateTime.now(), error: error),
+        idImage: idBytes,
+        personalImage: personalBytes,
+        writeImages: imagesChanged,
+      );
+      _savedSnapshot = snapshot;
+      _savedIdBytes = idBytes;
+      _savedPersonalBytes = personalBytes;
+      _lastError = error;
+      if (mounted && !silent) setState(() {});
+      return true;
+    } catch (e) {
+      _toast('تعذّر حفظ الطلب على الجهاز: $e');
+      return false;
+    } finally {
+      _saving = false;
+    }
+  }
+
+  void _toast(String text) {
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  /// Leaving an unsent request: it is already autosaved, so ask whether to
+  /// keep it in "الطلبات العالقة" or throw it away.
+  Future<void> _confirmLeave() async {
+    if (_dirty && !await _saveAsPending(error: _lastError, silent: true)) return;
+    if (!mounted) return;
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (dctx) => AlertDialog(
+        title: const Text('الطلب ما انبعث'),
+        content: const Text('الطلب محفوظ في الطلبات العالقة، بتقدر تكمل عليه بعدين.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dctx, 'delete'),
+            child: const Text('احذفه', style: TextStyle(color: AppColors.blood)),
+          ),
+          TextButton(onPressed: () => Navigator.pop(dctx), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(dctx, 'keep'), child: const Text('خلّيه')),
+        ],
+      ),
+    );
+    if (choice == null || !mounted) return;
+    if (choice == 'delete' && _pendingId != null) {
+      await PendingStore.instance.delete(_pendingId!);
+      _pendingId = null;
+    }
+    setState(() => _sent = true); // nothing left to protect; let the pop through
+    if (mounted) Navigator.of(context).pop();
   }
 
   String get _suggestedEmail =>
@@ -84,6 +277,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   @override
   void dispose() {
+    _autosaveTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     for (final c in [_idNumber, _username, _fullname, _arabicfullname, _password, _mobile, _email, _address, _incomeRate]) {
       c.dispose();
     }
@@ -164,17 +359,107 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       setState(() {
         _result = result;
         _submitting = false;
+        _archiveStatus = null;
       });
     }
+    if (result.ok) {
+      setState(() => _sent = true);
+      _autosaveTimer?.cancel();
+      if (_pendingId != null) {
+        await PendingStore.instance.delete(_pendingId!);
+        _pendingId = null;
+      }
+      await _archive(data, result);
+    } else if (await _saveAsPending(error: _lastError = result.message, silent: true)) {
+      _toast('انحفظ الطلب في الطلبات العالقة، بتقدر تعدّله وتبعته مرة ثانية.');
+    }
+  }
+
+  /// Saves a successful registration (data, photos, who made it) to Firestore
+  /// so it shows in "طلباتي" and in the admin's request list.
+  Future<void> _archive(RegistrationData data, RegistrationResult result) async {
+    final user = AuthService.instance.user;
+    if (user == null || result.idImageBase64 == null || result.personalImageBase64 == null) {
+      return;
+    }
+    setState(() => _archiveStatus = 'جارٍ حفظ الطلب...');
+    String status;
+    try {
+      // Offline, Firestore queues the write and sends it once back online.
+      await RegistrationsRepo.save(
+        data: data.toEnrollPayload(),
+        labels: await _lookupLabels(),
+        idImageBase64: result.idImageBase64!,
+        personalImageBase64: result.personalImageBase64!,
+        by: user,
+      ).timeout(const Duration(seconds: 20));
+      status = 'تم حفظ الطلب في طلباتي.';
+    } on TimeoutException {
+      status = 'لا يوجد اتصال، سيتم حفظ الطلب تلقائياً عند عودة الإنترنت.';
+    } catch (e) {
+      status = 'تعذّر حفظ الطلب: $e';
+    }
+    if (mounted) {
+      setState(() => _archiveStatus = status);
+    }
+  }
+
+  /// Display names for the code fields, from the already-loaded dropdowns.
+  Future<Map<String, String>> _lookupLabels() async {
+    final fields = <String, (String, String?, String?)>{
+      'issuanceCountry': ('countries', _issuanceCountry, null),
+      'nationality': ('countries', _nationality, null),
+      'country': ('countries', _country, null),
+      'region': ('regions', _region, null),
+      'governorate': ('governorates', _governorate, _region),
+      'city': ('cities', _city, _governorate),
+      'jobTitle': ('job_titles', _jobTitle, null),
+      'jobPosition': ('job_positions', _jobPosition, _jobTitle),
+    };
+    final labels = <String, String>{};
+    for (final e in fields.entries) {
+      final (type, value, parent) = e.value;
+      try {
+        final opts = await Lookups.options(type, parent);
+        for (final o in opts) {
+          if (o.id == value) {
+            labels[e.key] = o.name;
+            break;
+          }
+        }
+      } catch (_) {}
+    }
+    return labels;
   }
 
   // ---------------------------------------------------------------- build
 
   @override
   Widget build(BuildContext context) {
+    return PopScope(
+      canPop: !_hasContent,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmLeave();
+      },
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const FlickerText('التسجيل', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 4)),
+        actions: [
+          IconButton(
+            tooltip: 'حفظ في الطلبات العالقة',
+            icon: const Icon(Icons.save),
+            onPressed: _submitting
+                ? null
+                : () async {
+                    if (await _saveAsPending()) _toast('انحفظ في الطلبات العالقة.');
+                  },
+          ),
+        ],
       ),
       body: Form(
         key: _form,
@@ -201,6 +486,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               ),
             ),
             if (_result != null) _resultCard(_result!),
+            if (_archiveStatus != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(_archiveStatus!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted)),
+              ),
             const SizedBox(height: 24),
           ]),
         ),

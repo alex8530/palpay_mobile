@@ -8,10 +8,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:image/image.dart' as img;
+import 'package:palpay_mobile/core/auth_service.dart';
 import 'package:palpay_mobile/core/enroll_client.dart';
 import 'package:palpay_mobile/core/enroll_config.dart';
 import 'package:palpay_mobile/core/enroll_images.dart';
 import 'package:palpay_mobile/core/lookups.dart';
+import 'package:palpay_mobile/core/pending_store.dart';
 import 'package:palpay_mobile/core/registration_service.dart';
 import 'package:palpay_mobile/screens/registration_screen.dart';
 import 'package:palpay_mobile/theme/app_theme.dart';
@@ -335,6 +337,37 @@ void main() {
             return http.Response('[]', 200, headers: {'content-type': 'application/json'});
           }));
       expect(sent, 0);
+    });
+
+    testWidgets('a half-filled form is kept as a pending request when the app goes to the background', (tester) async {
+      final dir = Directory.systemTemp.createTempSync('autosave_test');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      PendingStore.instance.debugDirectory = dir;
+      const user = AppUser(phone: '0599111111', name: 'User', password: 'secret1');
+      AuthService.instance.debugSetUser(user);
+      addTearDown(() => AuthService.instance.debugSetUser(null));
+
+      await http.runWithClient(() async {
+        await tester.pumpWidget(MaterialApp(
+          theme: buildAppTheme(),
+          home: const Directionality(textDirection: TextDirection.rtl, child: RegistrationScreen()),
+        ));
+        await tester.pump(const Duration(seconds: 1));
+
+        await tester.enterText(find.widgetWithText(TextFormField, 'رقم الهوية'), '123456789');
+        await tester.pump();
+
+        // What happens right before the app is closed or killed.
+        await tester.runAsync(() async {
+          tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+        });
+
+        final pending = await tester.runAsync(() => PendingStore.instance.list(user.phone));
+        expect(pending, hasLength(1));
+        expect(pending!.single.form['idNumber'], '123456789');
+        expect(pending.single.form['email'], '123456789@${EnrollConfig.emailDomain}');
+      }, () => MockClient((req) async => http.Response('[]', 200, headers: {'content-type': 'application/json'})));
     });
   });
 }

@@ -1,0 +1,25 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "palpay-mobile",
+          "appId": "1:607019675125:android:e7b5424d153583e5da04bc",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "palpay-mobile",
+          "configurations": {
+            "android": "1:607019675125:android:e7b5424d153583e5da04bc",
+            "ios": "1:607019675125:ios:b625e5f0014883e1da04bc"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
